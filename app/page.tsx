@@ -1,5 +1,5 @@
 "use client";
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -9,11 +9,11 @@ import {
   useEdgesState,
   addEdge,
 } from '@xyflow/react';
-
 import '@xyflow/react/dist/style.css';
 import CustomNode from '@/components/customNodes';
 import { hierarchicalData } from '@/data/mockData';
 import { parseNodes } from '@/utils/utils';
+import expandedNodesContext from '@/context/expandedNodesContext';
 
 const initialNodes = [
   { id: '1', type: "customNode", position: { x: 0, y: 0 }, data: { label: '1' } },
@@ -38,17 +38,16 @@ const getData = () => {
 export default function App() {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-
+  const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
   const nodeTypes = useMemo(() => ({ customNode: CustomNode }), []);
-
   useEffect(() => {
     const data = getData();
     console.log(data);
-    const parsedData = parseNodes(data);
+    const parsedData = parseNodes(data, expandedNodes);
     console.log(parsedData);
     setNodes(parsedData?.nodes || []);
     setEdges(parsedData?.edges || []);
-  }, []);
+  }, [expandedNodes]);
 
   const onConnect = useCallback(
     (params: any) => setEdges((eds) => addEdge(params, eds)),
@@ -56,19 +55,21 @@ export default function App() {
   );
 
   return (
-    <div style={{ width: '100vw', height: '100vh' }}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        nodeTypes={nodeTypes}
-      >
-        <Controls />
-        <MiniMap />
-        <Background gap={12} size={1} />
-      </ReactFlow>
-    </div>
+    <expandedNodesContext.Provider value={{ expandedNodes, setExpandedNodes }}>
+      <div style={{ width: '100vw', height: '100vh' }}>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          nodeTypes={nodeTypes}
+        >
+          <Controls />
+          <MiniMap />
+          <Background gap={12} size={1} />
+        </ReactFlow>
+      </div>
+    </expandedNodesContext.Provider>
   );
 }

@@ -22,11 +22,11 @@ export const hierarchicalData = {
           },
           {
             name: "Distribution",
-            children: [
-              { name: "Packaging" , clusterId: '67da6b4a10ebc8172adaa58c',id: "packaging" },
-              { name: "Logistics" , clusterId: '67da6b4a10ebc8172adaa58c',id: "logistics" },
-              { name: "Warehousing" , clusterId: '67da6b4a10ebc8172adaa58c',id: "warehousing" }
-            ]
+            // children: [
+            //   { name: "Packaging" , clusterId: '67da6b4a10ebc8172adaa58c',id: "packaging" },
+            //   { name: "Logistics" , clusterId: '67da6b4a10ebc8172adaa58c',id: "logistics" },
+            //   { name: "Warehousing" , clusterId: '67da6b4a10ebc8172adaa58c',id: "warehousing" }
+            // ]
           }
         ]
       },
@@ -54,10 +54,10 @@ export const hierarchicalData = {
         children: [
           {
             name: "Technical",
-            children: [
-              { name: "Design" },
-              { name: "Engineering" }
-            ]
+            // children: [
+            //   { name: "Design" },
+            //   { name: "Engineering" }
+            // ]
           },
           {
             name: "Business",

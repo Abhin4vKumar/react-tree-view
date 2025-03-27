@@ -14,19 +14,19 @@
 //     { id: 'e1-6', type: 'smoothstep', source: '1', target: '6' },
 //   ];
 
-const MIN_GAP = 100;
-const NODE_WIDTH = 100;
+const MIN_GAP = 150;
+const NODE_WIDTH = 200;
+const NODE_HEIGHT = 100;
 const maximum = (a:number , b:number):number =>{
     if(a > b){
         return a;
     }
     return b;
 }
-const helper = (data:any , result:any , parentId:string|null , depth : number , parentIndex: number , depthWiseGapData:any , levelWiseContainerSize:any ):number => {
+const helper = (data:any , result:any , parentId:string|null , depth : number , parentIndex: number , depthWiseLeftSpacing:any , expandedNodes:Record<string,boolean> ):number => {
     if(!data) return 0;
-    let totalSize = 0;
-    let offset = -1;
-    let gapUsed = -1;
+    let first = -1;
+    let last = -1;
     for(let i=0; i<data.length; i++){
         //CalculateID
         let id = "";
@@ -35,32 +35,39 @@ const helper = (data:any , result:any , parentId:string|null , depth : number , 
         }else{
             id = `${i}`;
         }
-        const res = helper(data[i].children , result , id , depth + 1 , i , depthWiseGapData , levelWiseContainerSize  );
-        //calculate position
-        if(offset === -1){
-            offset = levelWiseContainerSize[depth] || 0;
+        let res = 0;
+        if(!expandedNodes?.[id]){
+            res = helper(data[i].children , result , id , depth + 1 , i , depthWiseLeftSpacing , expandedNodes  );
         }
+        let offset = 0;
         let leftSpacing = 0;
-        if(!levelWiseContainerSize[depth]){
-            leftSpacing = 0;
+        let xcor = 0;
+        if(!data[i]?.children?.length || (expandedNodes[id])){
+            leftSpacing = (depthWiseLeftSpacing[depth] ? depthWiseLeftSpacing[depth] : 0) + MIN_GAP;
+            xcor = (MIN_GAP * parentIndex) + parentIndex * NODE_WIDTH;
         }else{
-            leftSpacing = levelWiseContainerSize[depth];
+            xcor = res ;
         }
-        let gap = 0;
-        if(!depthWiseGapData[depth + 1]){
-            gap = MIN_GAP;
-        }else{
-            gap = (depthWiseGapData[depth + 1] * (data[i]?.children?.length ? data[i]?.children?.length - 1 : 0)) + (MIN_GAP) + (NODE_WIDTH * (data[i]?.children?.length || 0)) / 2;
+        if(depthWiseLeftSpacing[depth - 1]){
+            if(!depthWiseLeftSpacing[depth] || (depthWiseLeftSpacing[depth] && (depthWiseLeftSpacing[depth] < depthWiseLeftSpacing[depth - 1]))){
+                offset = depthWiseLeftSpacing[depth - 1] + MIN_GAP - (leftSpacing);
+                console.log(id,offset)
+            }
         }
-        gapUsed = maximum(gapUsed , gap);
-        let xVal = leftSpacing + (NODE_WIDTH * (i + 1)) + (gap * i) + (NODE_WIDTH /2) + (res/2);
-        levelWiseContainerSize[depth] = xVal;
-        totalSize = xVal;
+        let xVal =  offset + (leftSpacing != 0 ? leftSpacing : xcor) ;
+        if(i==0){
+            first = xVal;
+        }
+        if(i == data.length - 1){
+            last = xVal;
+        }
+        depthWiseLeftSpacing[depth] = xVal + NODE_WIDTH/2;
         result.nodes.push({
             id: id,
             type: "customNode",
-            position: { x: xVal, y: depth*100 }, // Calculate Position
-            data: { label: data[i].name , nodeData: data[i] }
+            position: { x: xVal, y: depth*(NODE_HEIGHT + MIN_GAP) }, // Calculate Position
+            // data: { label: `${xVal} , ${leftSpacing} , ${depthWiseLeftSpacing[depth]} , ${offset}` , nodeData: data[i] , id:id }
+            data: { label: data[i].name , nodeData: data[i] , id:id , parentId: parentId , expanded: expandedNodes[id] }
         });
         if(parentId){
             result.edges.push({
@@ -71,18 +78,18 @@ const helper = (data:any , result:any , parentId:string|null , depth : number , 
             });
         }
     }
-    let toReturn = totalSize - offset;
-    depthWiseGapData[depth] = gapUsed;
+    //cal avg
+    let toReturn = last + first;
+    toReturn = toReturn/2;
     return toReturn;
 }
 
-export const parseNodes = (data:any)=>{
+export const parseNodes = (data:any , expandedState:Record<string,boolean>)=>{
     const result = {
         nodes: [],
         edges: []
     }
-    const depthWiseGapData = {}
-    const levelWiseContainerSize = {}
-    const parsedData = helper(data["children"] , result , null , 0 , 0 , depthWiseGapData , levelWiseContainerSize);
+    const depthWiseLeftSpacing = {}
+    const parsedData = helper([data,] , result , null , 0 , 0 , depthWiseLeftSpacing , expandedState);
     return result;
 }
